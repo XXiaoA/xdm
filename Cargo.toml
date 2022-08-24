@@ -2,7 +2,17 @@
 name = "xdm"
 version = "0.1.0"
 edition = "2021"
+description = "XXiaoA's dotfiles manager"
+repository = "https://github.com/XXiaoA/xdm/"
+license = "GNU General Public License v3.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+clap = { version = "3.2.17", features = ["derive"] }
+colored = "2.0.0"
+serde = { version = "1.0.144", features = ["derive"] }
+serde_yaml = "0.9.10"
+
+[profile.release]
+panic = 'abort' 

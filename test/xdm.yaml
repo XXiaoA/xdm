@@ -1,0 +1,12 @@
+link:
+  ./1:
+    path: ./2
+    exist: false
+
+  ./xa:
+    path: ./aa
+
+  ./sxa:
+    path:
+
+  ./sa:
