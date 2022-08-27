@@ -21,10 +21,11 @@ link:
     path: ~/.tmux.conf
 ```
 
-| Parameter | Explanation                                      | type   | default |
-| ---       | ---                                              | ---    | :---:   |
-| path      | The file path to linked file                     | string | \\      |
-| exist     | only create the link if the original file exists | bool   | true    |
+| Parameter | Explanation                                           | type   | default |
+| ---       | ---                                                   | ---    | :---:   |
+| path      | The file path to linked file                          | string | \\      |
+| exist     | Only create the link if the original file exists      | bool   | true    |
+| force     | Create the link whether the linked file exists or not | bool   | false   |
 
 
 ## License
