@@ -11,7 +11,7 @@ First you should create a **yaml** file named `xdm.yaml` (not prerequisite, but 
 
 Then you can run `xdm` in a directory wich has the yaml file. Xdm will find the `xdm.yaml` automatically in the current directory. Or you're able to use `xdm file.yaml` to specify a yaml file.
 
-## Example
+## Configurtion
 ```yaml
 link:
   ./path-to-original-file:
@@ -20,8 +20,12 @@ link:
   ./tmux:
     path: ~/.tmux.conf
     if: test -e /usr/bin/tmux # for fish shell
-```
 
+create:
+  - ~/repos
+```
+###  Link
+Link a file/directory
 | Parameter | Explanation                                           | type   | default |
 | ---       | ---                                                   | ---    | :---:   |
 | path      | The file path to linked file                          | string | \\      |
@@ -30,6 +34,8 @@ link:
 | if        | Create the link if shell command is true (WIP)        | string | \\      |
 | create    | Create the parent directory of link if need           | bool    | true    |
 
+### Create
+Create a directory
 
 ## License
 [GNU General Public License v3.0](./LICENSE)

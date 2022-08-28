@@ -13,6 +13,7 @@ struct Args {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Config {
+    create: Vec<String>,
     link: HashMap<String, HashMap<String, String>>,
 }
 
@@ -44,6 +45,20 @@ impl Config {
 
 fn main() {
     let xdm_config = Config::get_conf();
+    // do jobs for create
+    println!("######job#######");
+    let all_creates = &xdm_config.create;
+    for directory in all_creates {
+        let path = absolute_path(directory);
+        let path = Path::new(&path);
+        if !path.exists() {
+            fs::create_dir_all(path).unwrap();
+            println!("{}{}", directory.green(), ": created the directory successfully".green())
+        }
+    }
+
+    // do jobs for link
+    println!("######link######");
     let all_links = &xdm_config.link;
     for link_item in all_links {
         let original = link_item.0;

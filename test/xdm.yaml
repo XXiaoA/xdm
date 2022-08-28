@@ -7,3 +7,6 @@ link:
 
   ~/sxa:
     path: a
+
+create:
+  - ./create
