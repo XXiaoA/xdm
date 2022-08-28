@@ -1,7 +1,6 @@
 use clap::Parser;
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
-use serde_yaml;
 use std::{collections::HashMap, path::Path};
 
 #[derive(Parser)]
@@ -35,9 +34,8 @@ impl Config {
             .get(parameter)
             .map(String::as_str)
             .unwrap_or_else(|| match parameter {
-                "exist" => "true",
+                "exist" | "if" => "true",
                 "force" => "false",
-                "if" => "true",
                 _ => "",
             });
         value
@@ -103,8 +101,14 @@ fn create_softlink(original: &str, link: &str) -> Result<(), String> {
     let link_path = Path::new(link);
 
     let xdm_config = Config::get_conf();
-    let exist = xdm_config.get_link_parameter(original, "exist");
-    let force = xdm_config.get_link_parameter(original, "force");
+    let exist: bool = xdm_config
+        .get_link_parameter(original, "exist")
+        .parse()
+        .unwrap();
+    let force: bool = xdm_config
+        .get_link_parameter(original, "force")
+        .parse()
+        .unwrap();
     let condition = xdm_config.get_link_parameter(original, "if");
 
     let command_status = if condition == "true" {
@@ -115,21 +119,15 @@ fn create_softlink(original: &str, link: &str) -> Result<(), String> {
 
     if !command_status {
         Err(String::from("skip to create link"))
-    } else if exist == "false" && force == "true" {
+    } else if !exist && force {
         remove_file_dir(link_path).err();
         symlink(original, link).err();
         Ok(())
-    } else if exist == "false" && !Path::exists(link_path) {
-        symlink(original, link).err();
-        Ok(())
-    } else if !Path::exists(original_path) && force == "true" {
+    } else if (!exist && !Path::exists(link_path)) || (!Path::exists(original_path) && force) {
         symlink(original, link).err();
         Ok(())
     } else if !Path::exists(original_path) {
-        Err(String::from(format!(
-            "the file `{}` doesn't exist",
-            original
-        )))
+        Err(format!("the file `{}` doesn't exist", original))
     } else {
         Err(String::from("skip to create link"))
     }
