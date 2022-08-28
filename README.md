@@ -2,7 +2,12 @@
 XXiaoA's dotfiles manager
 
 ## Install
+### Releases
+Download the file from [releases](https://github.com/XXiaoA/xdm/releases)
+
+### From source
 Clone the source code with git. Then run `cargo r`
+
 
 ## Usage
 > Run `xdm -h` for more details
@@ -10,6 +15,7 @@ Clone the source code with git. Then run `cargo r`
 First you should create a **yaml** file named `xdm.yaml` (not prerequisite, but **recommend**).
 
 Then you can run `xdm` in a directory wich has the yaml file. Xdm will find the `xdm.yaml` automatically in the current directory. Or you're able to use `xdm file.yaml` to specify a yaml file.
+
 
 ## Configurtion
 ```yaml

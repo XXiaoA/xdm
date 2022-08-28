@@ -18,3 +18,6 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 - new parameter for link: `force`,`if` and `create`
 - new option: create
+
+## [0.2.1] - 2022-08-28
+- docs
