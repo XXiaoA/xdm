@@ -19,6 +19,7 @@ link:
 
   ./tmux:
     path: ~/.tmux.conf
+    if: test -e /usr/bin/tmux # for fish shell
 ```
 
 | Parameter | Explanation                                           | type   | default |
@@ -26,6 +27,7 @@ link:
 | path      | The file path to linked file                          | string | \\      |
 | exist     | Only create the link if the original file exists      | bool   | true    |
 | force     | Create the link whether the linked file exists or not | bool   | false   |
+| if        | Create the link if shell command is true (WIP)        | string | \\      |
 
 
 ## License

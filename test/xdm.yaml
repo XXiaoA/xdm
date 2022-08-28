@@ -1,7 +1,7 @@
 link:
   ./1:
     path: ./2
-    exist: false
+    if: test -f f.yaml
 
   ./xa:
     path: ./aa

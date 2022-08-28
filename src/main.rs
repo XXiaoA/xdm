@@ -2,8 +2,7 @@ use clap::Parser;
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use serde_yaml;
-use std::collections::HashMap;
-use std::path::Path;
+use std::{collections::HashMap, path::Path};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -38,6 +37,7 @@ impl Config {
             .unwrap_or_else(|| match parameter {
                 "exist" => "true",
                 "force" => "false",
+                "if" => "true",
                 _ => "",
             });
         value
@@ -63,11 +63,23 @@ fn main() {
                     original.color("green"),
                     ": created link successfully".green()
                 ),
-                // Err(err) => println!("{}: {}", original.red(), err.red()),
                 Err(err) => println!("{}", format!("{}: {}", original, err).blue()),
             }
         }
     }
+}
+
+fn get_command_status(command: &str) -> bool {
+    use std::process::Command;
+
+    let command: Vec<&str> = command.split_whitespace().collect();
+    let status = Command::new(command[0])
+        .args(&command[1..])
+        .output()
+        .unwrap()
+        .status;
+
+    status.success()
 }
 
 fn remove_file_dir(path: &Path) -> Result<(), String> {
@@ -87,14 +99,23 @@ fn remove_file_dir(path: &Path) -> Result<(), String> {
 fn create_softlink(original: &str, link: &str) -> Result<(), String> {
     use std::os::unix::fs::symlink;
 
-    let xdm_config = Config::get_conf();
-    let exist = xdm_config.get_link_parameter(original, "exist");
-    let force = xdm_config.get_link_parameter(original, "force");
-
     let original_path = Path::new(original);
     let link_path = Path::new(link);
 
-    if exist == "false" && force == "true" {
+    let xdm_config = Config::get_conf();
+    let exist = xdm_config.get_link_parameter(original, "exist");
+    let force = xdm_config.get_link_parameter(original, "force");
+    let condition = xdm_config.get_link_parameter(original, "if");
+
+    let command_status = if condition == "true" {
+        true
+    } else {
+        get_command_status(condition)
+    };
+
+    if !command_status {
+        Err(String::from("skip to create link"))
+    } else if exist == "false" && force == "true" {
         remove_file_dir(link_path).err();
         symlink(original, link).err();
         Ok(())
