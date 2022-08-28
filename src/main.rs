@@ -1,7 +1,7 @@
 use clap::Parser;
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, fs, path::Path};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -34,7 +34,7 @@ impl Config {
             .get(parameter)
             .map(String::as_str)
             .unwrap_or_else(|| match parameter {
-                "exist" | "if" => "true",
+                "exist" | "if" | "create" => "true",
                 "force" => "false",
                 _ => "",
             });
@@ -47,20 +47,34 @@ fn main() {
     let all_links = &xdm_config.link;
     for link_item in all_links {
         let original = link_item.0;
-        let path = xdm_config.get_link_parameter(original, "path");
-        if path.is_empty() {
+        let link = xdm_config.get_link_parameter(original, "path");
+        if link.is_empty() {
             println!(
                 "{}{}",
                 original.color("red"),
                 ": something wrong in `path`".red()
             )
         } else {
-            match create_softlink(original, path) {
-                Ok(_) => println!(
-                    "{}{}",
-                    original.color("green"),
-                    ": created link successfully".green()
-                ),
+            match create_softlink(original, link) {
+                Ok(_) => {
+                    // TODO: make the following perfect
+                    // create the parent directory if need
+                    let link_path = Path::new(link);
+                    let create: bool = xdm_config
+                        .get_link_parameter(original, "create")
+                        .parse()
+                        .unwrap();
+                    let link_parent = link_path.parent().unwrap();
+                    if create && !link_parent.exists() {
+                        fs::create_dir_all(link_parent.to_str().unwrap()).unwrap();
+                        create_softlink(original, link).unwrap();
+                    }
+                    println!(
+                        "{}{}",
+                        original.color("green"),
+                        ": created link successfully".green()
+                    );
+                }
                 Err(err) => println!("{}", format!("{}: {}", original, err).blue()),
             }
         }
@@ -81,7 +95,6 @@ fn get_command_status(command: &str) -> bool {
 }
 
 fn remove_file_dir(path: &Path) -> Result<(), String> {
-    use std::fs;
     if !Path::exists(path) {
         Err(String::from("The path doesn't exist"))
     } else {
@@ -123,12 +136,13 @@ fn create_softlink(original: &str, link: &str) -> Result<(), String> {
         remove_file_dir(link_path).err();
         symlink(original, link).err();
         Ok(())
-    } else if (!exist && !Path::exists(link_path)) || (!Path::exists(original_path) && force) {
+    } else if (!exist && !link_path.exists()) || (!original_path.exists() && force) {
         symlink(original, link).err();
         Ok(())
-    } else if !Path::exists(original_path) {
+    } else if !original_path.exists() {
         Err(format!("the file `{}` doesn't exist", original))
     } else {
-        Err(String::from("skip to create link"))
+        symlink(original, link).err();
+        Ok(())
     }
 }

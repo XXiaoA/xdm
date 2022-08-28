@@ -4,11 +4,11 @@ link:
     if: test -f f.yaml
 
   ./xa:
-    path: ./aa
+    path: ./aa/s
 
   ./sxa:
     path: a
-    force: true
-    exist: false
+    force: false
+    exist: true
 
   ./sa:
