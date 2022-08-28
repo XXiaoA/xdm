@@ -57,7 +57,7 @@ fn main() {
         } else {
             match create_softlink(original, link) {
                 Ok(_) => {
-                    // TODO: make the following perfect
+                    // TODO: make the following code cleaner
                     // create the parent directory if need
                     let link_path = Path::new(link);
                     let create: bool = xdm_config
@@ -69,11 +69,7 @@ fn main() {
                         fs::create_dir_all(link_parent.to_str().unwrap()).unwrap();
                         create_softlink(original, link).unwrap();
                     }
-                    println!(
-                        "{}{}",
-                        original.color("green"),
-                        ": created link successfully".green()
-                    );
+                    println!("{} {} {}", original.green(), "=>".green(), link.green());
                 }
                 Err(err) => println!("{}", format!("{}: {}", original, err).blue()),
             }
@@ -107,11 +103,35 @@ fn remove_file_dir(path: &Path) -> Result<(), String> {
     }
 }
 
+fn absolute_path(path: &str) -> String {
+    use path_absolutize::Absolutize;
+    use std::env;
+
+    let path_vec: Vec<&str> = path.split("/").collect();
+
+    if path_vec[0] == "~" {
+        let prev = env::var("HOME").unwrap_or("none".to_string());
+        let end = path_vec[1..].join("/");
+        format!("{}/{}", prev, end)
+    } else if &path_vec[0][0..1] == "$" {
+        let env = &path_vec[0][1..];
+        let prev = env::var(env).unwrap_or("none".to_string());
+        let end = path_vec[1..].join("/");
+        format!("{}/{}", prev, end)
+    } else {
+        let absolute_path = Path::new(path).absolutize().unwrap();
+        absolute_path.to_str().unwrap().to_string()
+    }
+}
+
 fn create_softlink(original: &str, link: &str) -> Result<(), String> {
     use std::os::unix::fs::symlink;
 
-    let original_path = Path::new(original);
-    let link_path = Path::new(link);
+    let absolute_original = &absolute_path(original);
+    let absolute_link = &absolute_path(link);
+
+    let original_path = Path::new(absolute_original);
+    let link_path = Path::new(absolute_link);
 
     let xdm_config = Config::get_conf();
     let exist: bool = xdm_config
@@ -133,16 +153,16 @@ fn create_softlink(original: &str, link: &str) -> Result<(), String> {
     if !command_status {
         Err(String::from("skip to create link"))
     } else if !exist && force {
-        remove_file_dir(link_path).err();
-        symlink(original, link).err();
+        remove_file_dir(link_path).unwrap();
+        symlink(absolute_original, absolute_link).unwrap();
         Ok(())
     } else if (!exist && !link_path.exists()) || (!original_path.exists() && force) {
-        symlink(original, link).err();
+        symlink(absolute_original, absolute_link).unwrap();
         Ok(())
     } else if !original_path.exists() {
         Err(format!("the file `{}` doesn't exist", original))
     } else {
-        symlink(original, link).err();
+        symlink(absolute_original, absolute_link).err();
         Ok(())
     }
 }

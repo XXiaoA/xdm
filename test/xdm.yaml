@@ -1,14 +1,9 @@
 link:
-  ./1:
-    path: ./2
-    if: test -f f.yaml
+  ./1a:
+    path: ./1/a
 
   ./xa:
     path: ./aa/s
 
-  ./sxa:
+  ~/sxa:
     path: a
-    force: false
-    exist: true
-
-  ./sa:
