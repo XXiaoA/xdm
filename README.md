@@ -5,6 +5,9 @@ XXiaoA's dotfiles manager
 ### Releases
 Download the file from [releases](https://github.com/XXiaoA/xdm/releases)
 
+### Crates.io
+Download from crates.io `cargo install xdm`. And remember to add `~/.cargo/bin/` in you $PATH
+
 ### From source
 Clone the source code with git. Then run `cargo r`
 
@@ -18,6 +21,7 @@ Then you can run `xdm` in a directory wich has the yaml file. Xdm will find the 
 
 
 ## Configurtion
+For example:
 ```yaml
 link:
   ./path-to-original-file:
@@ -30,6 +34,9 @@ link:
 create:
   - ~/repos
 ```
+Notice: you must have `link` option.
+
+
 ###  Link
 Link a file/directory
 | Parameter | Explanation                                           | type   | default |
