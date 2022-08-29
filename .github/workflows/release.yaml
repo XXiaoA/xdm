@@ -22,7 +22,7 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
-          - windows-latest
+          # - windows-latest  
 
     runs-on:  ${{ matrix.os }}
 
@@ -40,7 +40,7 @@ jobs:
           # (optional) On which platform to distribute the `.zip` file.
           # [default value: windows]
           # [possible values: all, unix, windows, none]
-          zip: windows
+          # zip: windows
         env:
           # (required) GitHub token for uploading assets to GitHub Releases.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
