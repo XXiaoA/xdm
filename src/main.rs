@@ -50,15 +50,15 @@ fn get_conf() -> Value {
         let file_content = std::fs::File::open(file_path).expect("Could not open file.");
         serde_yaml::from_reader(file_content).expect("Could not read values.")
     } else {
-        let yaml = "Cann't find configuration file";
+        let yaml = "Can't find configuration file";
         serde_yaml::from_str(yaml).unwrap()
     }
 }
 
 fn main() {
     let xdm_config = get_conf();
-    if xdm_config == "Cann't find configuration file" {
-        println!("{}", "Cann't find configuration file".bold().red());
+    if xdm_config == "Can't find configuration file" {
+        println!("{}", "Can't find configuration file".bold().red());
         return;
     }
 

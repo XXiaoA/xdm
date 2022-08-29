@@ -17,10 +17,10 @@ Clone the source code with git. Then run `cargo r`
 
 First you should create a **yaml** file named `xdm.yaml` (not prerequisite, but **recommend**).
 
-Then you can run `xdm` in a directory wich has the yaml file. Xdm will find the `xdm.yaml` automatically in the current directory. Or you're able to use `xdm file.yaml` to specify a yaml file.
+Then you can run `xdm` in a directory which has the yaml file. Xdm will find the `xdm.yaml` automatically in the current directory. Or you're able to use `xdm file.yaml` to specify a yaml file.
 
 
-## Configurtion
+## Configuration
 For example:
 ```yaml
 link:
