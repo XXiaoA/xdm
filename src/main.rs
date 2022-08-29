@@ -11,6 +11,37 @@ struct Args {
     file: String,
 }
 
+trait Configuration {
+    fn get_link_parameter(&self, original: &str, parameter: &str) -> &str;
+}
+
+impl Configuration for Value {
+    fn get_link_parameter(&self, original: &str, parameter: &str) -> &str {
+        let all_links = self.get("link").unwrap();
+        let all_parameters = all_links.get(original).unwrap();
+        let _value = all_parameters.get(&parameter);
+        let value = if let Some(v) = _value {
+            if v.is_bool() {
+                match v {
+                    Value::Bool(true) => "true",
+                    Value::Bool(false) => "false",
+                    _ => "",
+                }
+            } else {
+                v.as_str().unwrap_or("")
+            }
+        } else {
+            match parameter {
+                "exist" | "if" | "create" => "true",
+                "force" => "false",
+                _ => "",
+            }
+        };
+
+        value
+    }
+}
+
 fn get_conf() -> Value {
     // get file path from user
     let args = Args::parse();
@@ -19,31 +50,6 @@ fn get_conf() -> Value {
     let file_content = std::fs::File::open(file_path).expect("Could not open file.");
     let config: Value = serde_yaml::from_reader(file_content).expect("Could not read values.");
     config
-}
-
-// TODO: refactor
-fn get_link_parameter(conf: Value, original: String, parameter: String) -> String {
-    let all_links = conf.get("link").unwrap();
-    let all_parameters = all_links.get(original).unwrap();
-    let _value = all_parameters.get(&parameter);
-    let value = if let Some(v) = _value {
-        if v.is_bool() {
-            match v {
-                Value::Bool(true) => "true".to_string(),
-                Value::Bool(false) => "false".to_string(),
-                _ => "a".to_string(),
-            }
-        } else {
-            v.as_str().unwrap_or("").to_owned()
-        }
-    } else {
-        match parameter.as_str() {
-            "exist" | "if" | "create" => "true".to_string(),
-            "force" => "false".to_string(),
-            _ => "".to_string(),
-        }
-    };
-    value
 }
 
 fn main() {
@@ -76,11 +82,7 @@ fn main() {
     let all_link_items = xdm_config.get("link").unwrap().as_mapping().unwrap();
     for link_item in all_link_items {
         let original = link_item.0.as_str().unwrap();
-        let link = get_link_parameter(
-            xdm_config.to_owned(),
-            original.to_string(),
-            "path".to_string(),
-        );
+        let link = xdm_config.get_link_parameter(original, "path");
 
         if link.is_empty() {
             println!(
@@ -89,23 +91,8 @@ fn main() {
                 ": something wrong in `path`".red()
             )
         } else {
-            match create_softlink(original, link.as_str()) {
+            match create_softlink(original, link) {
                 Ok(_) => {
-                    // TODO: make the following code cleaner
-                    // create the parent directory if need
-                    let link_path = Path::new(&link);
-                    let create: bool = get_link_parameter(
-                        xdm_config.to_owned(),
-                        original.to_string(),
-                        "create".to_string(),
-                    )
-                    .parse()
-                    .unwrap();
-                    let link_parent = link_path.parent().unwrap();
-                    if create && !link_parent.exists() {
-                        fs::create_dir_all(link_parent.to_str().unwrap()).unwrap();
-                        create_softlink(original, link.as_str()).unwrap();
-                    }
                     println!("{} {} {}", original.green(), "=>".green(), link.green());
                 }
                 Err(err) => println!("{}", format!("{}: {}", original, err).blue()),
@@ -161,57 +148,83 @@ fn absolute_path(path: &str) -> String {
     }
 }
 
+// TODO: add support for "a: b"
 fn create_softlink(original: &str, link: &str) -> Result<(), String> {
     use std::os::unix::fs::symlink;
 
-    let absolute_original = &absolute_path(original);
-    let absolute_link = &absolute_path(link);
+    fn can_create(original: &str, link: &str) -> Result<String, String> {
+        let absolute_original = &absolute_path(original);
+        let absolute_link = &absolute_path(link);
 
-    let original_path = Path::new(absolute_original);
-    let link_path = Path::new(absolute_link);
+        let original_path = Path::new(absolute_original);
+        let link_path = Path::new(absolute_link);
 
-    let xdm_config = get_conf();
-    let exist: bool = get_link_parameter(
-        xdm_config.to_owned(),
-        original.to_string(),
-        "exist".to_string(),
-    )
-    .parse()
-    .unwrap();
-    let force: bool = get_link_parameter(
-        xdm_config.to_owned(),
-        original.to_string(),
-        "force".to_string(),
-    )
-    .parse()
-    .unwrap();
-    let condition = get_link_parameter(xdm_config, original.to_string(), "if".to_string());
+        let xdm_config = get_conf();
+        let exist: bool = xdm_config
+            .get_link_parameter(original, "exist")
+            .parse()
+            .unwrap();
+        let force: bool = xdm_config
+            .get_link_parameter(original, "force")
+            .parse()
+            .unwrap();
+        let condition = xdm_config.get_link_parameter(original, "if");
+        let command_status = if condition == "true" {
+            true
+        } else {
+            get_command_status(condition)
+        };
 
-    println!("{}, {:#?}", original, force);
+        if !command_status {
+            Err(String::from("skip to create link"))
+        } else if !exist && force {
+            // remove_file_dir(link_path).unwrap();
+            // symlink(absolute_original, absolute_link).unwrap();
+            Ok(String::from("rc"))
+        } else if !exist && !link_path.exists() {
+            // symlink(absolute_original, absolute_link).unwrap();
+            Ok(String::from("c"))
+        } else if original_path.exists() && force {
+            // remove_file_dir(link_path).unwrap();
+            // symlink(absolute_original, absolute_link).unwrap();
+            Ok(String::from("rc"))
+        } else if !original_path.exists() {
+            Err(format!("the file `{}` doesn't exist", original))
+        } else {
+            // symlink(absolute_original, absolute_link).err();
+            Ok(String::from("c"))
+        }
+    }
 
-    let command_status = if condition == "true" {
-        true
+    let can_create = can_create(original, link);
+
+    if can_create.is_ok() {
+        let absolute_original = &absolute_path(original);
+        let absolute_link = &absolute_path(link);
+        let link_path = Path::new(absolute_link);
+        let link_parent = link_path.parent().unwrap();
+
+        let create: bool = get_conf()
+            .get_link_parameter(original, "create")
+            .parse()
+            .unwrap();
+
+        if create && !link_parent.exists() {
+            fs::create_dir_all(link_parent.to_str().unwrap()).unwrap();
+        }
+        match can_create.ok().unwrap().as_str() {
+            "c" => {
+                symlink(absolute_original, absolute_link).err();
+            }
+            "rc" => {
+                remove_file_dir(link_path).unwrap();
+                symlink(absolute_original, absolute_link).unwrap();
+            }
+            _ => todo!(),
+        }
+
+        Ok(())
     } else {
-        get_command_status(condition.as_str())
-    };
-
-    if !command_status {
-        Err(String::from("skip to create link"))
-    } else if !exist && force {
-        remove_file_dir(link_path).unwrap();
-        symlink(absolute_original, absolute_link).unwrap();
-        Ok(())
-    } else if !exist && !link_path.exists() {
-        symlink(absolute_original, absolute_link).unwrap();
-        Ok(())
-    } else if original_path.exists() && force {
-        remove_file_dir(link_path).unwrap();
-        symlink(absolute_original, absolute_link).unwrap();
-        Ok(())
-    } else if !original_path.exists() {
-        Err(format!("the file `{}` doesn't exist", original))
-    } else {
-        symlink(absolute_original, absolute_link).err();
-        Ok(())
+        Err(can_create.err().unwrap())
     }
 }

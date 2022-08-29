@@ -3,11 +3,12 @@ link:
     path: ./1/a
 
   ./xa:
-    path: ./aa/s
+    path: ./s
 
   ./ca:
     path: a
     force: true
 
-create:
-  - ./create
+# create:
+#   - ./create
+#   - cas
