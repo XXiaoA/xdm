@@ -6,7 +6,7 @@ XXiaoA's dotfiles manager
 Download the file from [releases](https://github.com/XXiaoA/xdm/releases)
 
 ### Crates.io
-Download from crates.io `cargo install xdm`. And remember to add `~/.cargo/bin/` in you $PATH
+Download from [crates.io](https://crates.io/crates/xdm): `cargo install xdm`. And remember to add `~/.cargo/bin/` into your $PATH
 
 ### From source
 Clone the source code with git. Then run `cargo r`

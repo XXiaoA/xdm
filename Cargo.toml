@@ -4,6 +4,7 @@ version = "0.2.3"
 edition = "2021"
 description = "XXiaoA's dotfiles manager"
 repository = "https://github.com/XXiaoA/xdm/"
+homepage = "https://crates.io/crates/xdm"
 license = "GPL-3.0-or-later"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
