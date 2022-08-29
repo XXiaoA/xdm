@@ -21,17 +21,27 @@ fn get_conf() -> Value {
     config
 }
 
+// TODO: refactor
 fn get_link_parameter(conf: Value, original: String, parameter: String) -> String {
     let all_links = conf.get("link").unwrap();
     let all_parameters = all_links.get(original).unwrap();
     let _value = all_parameters.get(&parameter);
-    let value = match _value {
-        Some(v) => v.as_str().unwrap_or("").to_owned(),
-        None => match parameter.as_str() {
+    let value = if let Some(v) = _value {
+        if v.is_bool() {
+            match v {
+                Value::Bool(true) => "true".to_string(),
+                Value::Bool(false) => "false".to_string(),
+                _ => "a".to_string(),
+            }
+        } else {
+            v.as_str().unwrap_or("").to_owned()
+        }
+    } else {
+        match parameter.as_str() {
             "exist" | "if" | "create" => "true".to_string(),
             "force" => "false".to_string(),
             _ => "".to_string(),
-        },
+        }
     };
     value
 }
@@ -177,6 +187,8 @@ fn create_softlink(original: &str, link: &str) -> Result<(), String> {
     .unwrap();
     let condition = get_link_parameter(xdm_config, original.to_string(), "if".to_string());
 
+    println!("{}, {:#?}", original, force);
+
     let command_status = if condition == "true" {
         true
     } else {
@@ -189,7 +201,11 @@ fn create_softlink(original: &str, link: &str) -> Result<(), String> {
         remove_file_dir(link_path).unwrap();
         symlink(absolute_original, absolute_link).unwrap();
         Ok(())
-    } else if (!exist && !link_path.exists()) || (!original_path.exists() && force) {
+    } else if !exist && !link_path.exists() {
+        symlink(absolute_original, absolute_link).unwrap();
+        Ok(())
+    } else if original_path.exists() && force {
+        remove_file_dir(link_path).unwrap();
         symlink(absolute_original, absolute_link).unwrap();
         Ok(())
     } else if !original_path.exists() {

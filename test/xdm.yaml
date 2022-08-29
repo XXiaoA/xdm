@@ -5,9 +5,9 @@ link:
   ./xa:
     path: ./aa/s
 
-  ~/sxa:
-    path: 
+  ./ca:
+    path: a
+    force: true
 
 create:
   - ./create
-  - a
