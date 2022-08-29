@@ -46,14 +46,21 @@ fn get_conf() -> Value {
     // get file path from user
     let args = Args::parse();
     let file_path = &args.file;
-
-    let file_content = std::fs::File::open(file_path).expect("Could not open file.");
-    let config: Value = serde_yaml::from_reader(file_content).expect("Could not read values.");
-    config
+    if Path::new(file_path).exists() {
+        let file_content = std::fs::File::open(file_path).expect("Could not open file.");
+        serde_yaml::from_reader(file_content).expect("Could not read values.")
+    } else {
+        let yaml = "Cann't find configuration file";
+        serde_yaml::from_str(yaml).unwrap()
+    }
 }
 
 fn main() {
     let xdm_config = get_conf();
+    if xdm_config == "Cann't find configuration file" {
+        println!("{}", "Cann't find configuration file".bold().red());
+        return;
+    }
 
     // do jobs for create
     let all_creates = xdm_config.get("create");
