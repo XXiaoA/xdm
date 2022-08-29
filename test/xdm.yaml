@@ -6,7 +6,8 @@ link:
     path: ./aa/s
 
   ~/sxa:
-    path: a
+    path: 
 
 create:
   - ./create
+  - a
