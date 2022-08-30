@@ -9,7 +9,7 @@ Download the file from [releases](https://github.com/XXiaoA/xdm/releases)
 Download from [crates.io](https://crates.io/crates/xdm): `cargo install xdm`. And remember to add `~/.cargo/bin/` into your $PATH
 
 ### From source
-Clone the source code with git. Then run `cargo r`
+Clone the source code with git. Then run `cargo install --path .`. And remember to add `~/.cargo/bin/` into your $PATH
 
 
 ## Usage
@@ -27,6 +27,8 @@ link:
   ./path-to-original-file:
     path: ./path-to-linked-file
 
+  ./nvim: ~/repos/nvim
+
   ./tmux:
     path: ~/.tmux.conf
     if: test -e /usr/bin/tmux # for fish shell
@@ -38,7 +40,17 @@ Notice: you must have `link` option.
 
 
 ###  Link
-Link a file/directory
+Link a file/directory.
+
+What's more, the two following form is same, it can reduce your work: 
+```yaml
+link:
+  ./a:
+    path: b
+
+  ./a: b
+```
+
 | Parameter | Explanation                                           | type   | default |
 | ---       | ---                                                   | ---    | :---:   |
 | path      | The file path to linked file                          | string | \\      |
