@@ -19,26 +19,28 @@ impl Configuration for Value {
     fn get_link_parameter(&self, original: &str, parameter: &str) -> &str {
         let all_links = self.get("link").unwrap();
         let all_parameters = all_links.get(original).unwrap();
-        let _value = all_parameters.get(&parameter);
-        let value = if let Some(v) = _value {
-            if v.is_bool() {
-                match v {
-                    Value::Bool(true) => "true",
-                    Value::Bool(false) => "false",
-                    _ => "",
+        if all_parameters.is_string() && parameter == "path" {
+            all_parameters.as_str().unwrap()
+        } else {
+            let _value = all_parameters.get(&parameter);
+            if let Some(v) = _value {
+                if v.is_bool() {
+                    match v {
+                        Value::Bool(true) => "true",
+                        Value::Bool(false) => "false",
+                        _ => "",
+                    }
+                } else {
+                    v.as_str().unwrap_or("")
                 }
             } else {
-                v.as_str().unwrap_or("")
+                match parameter {
+                    "exist" | "if" | "create" => "true",
+                    "force" => "false",
+                    _ => "",
+                }
             }
-        } else {
-            match parameter {
-                "exist" | "if" | "create" => "true",
-                "force" => "false",
-                _ => "",
-            }
-        };
-
-        value
+        }
     }
 }
 
@@ -152,7 +154,6 @@ fn absolute_path(path: &str) -> String {
     }
 }
 
-// TODO: add support for "a: b"
 fn create_softlink(original: &str, link: &str) -> Result<(), String> {
     use std::os::unix::fs::symlink;
 

@@ -2,8 +2,7 @@ link:
   ./1a:
     path: ./1/a
 
-  ./xa:
-    path: ./s
+  ./xa: ./s
 
   ./ca:
     path: a
