@@ -121,16 +121,13 @@ fn get_command_status(command: &str) -> bool {
     status.success()
 }
 
-fn remove_file_dir(path: &Path) -> Result<(), String> {
-    if !Path::exists(path) {
-        Err(String::from("The path doesn't exist"))
-    } else {
+fn remove_file_dir(path: &Path) {
+    if Path::exists(path) {
         if Path::is_dir(path) {
             fs::remove_dir_all(path).unwrap();
         } else if Path::is_file(path) {
             fs::remove_file(path).unwrap();
         }
-        Ok(())
     }
 }
 
@@ -222,17 +219,14 @@ fn create_softlink(original: &str, link: &str) -> Result<(), String> {
         match can_create.ok().unwrap().as_str() {
             "c" => {
                 symlink(absolute_original, absolute_link).err();
-                Ok(())
             }
-            "rc" => match remove_file_dir(link_path) {
-                Err(err) => Err(err),
-                Ok(_) => {
-                    symlink(absolute_original, absolute_link).unwrap();
-                    Ok(())
-                }
-            },
-            _ => Ok(()),
+            "rc" => {
+                remove_file_dir(link_path);
+                symlink(absolute_original, absolute_link).unwrap();
+            }
+            _ => todo!(),
         }
+        Ok(())
     } else {
         Err(can_create.err().unwrap())
     }
