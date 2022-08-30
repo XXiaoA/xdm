@@ -222,15 +222,17 @@ fn create_softlink(original: &str, link: &str) -> Result<(), String> {
         match can_create.ok().unwrap().as_str() {
             "c" => {
                 symlink(absolute_original, absolute_link).err();
+                Ok(())
             }
-            "rc" => {
-                remove_file_dir(link_path).unwrap();
-                symlink(absolute_original, absolute_link).unwrap();
-            }
-            _ => todo!(),
+            "rc" => match remove_file_dir(link_path) {
+                Err(err) => Err(err),
+                Ok(_) => {
+                    symlink(absolute_original, absolute_link).unwrap();
+                    Ok(())
+                }
+            },
+            _ => Ok(()),
         }
-
-        Ok(())
     } else {
         Err(can_create.err().unwrap())
     }
