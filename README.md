@@ -62,5 +62,14 @@ link:
 ### Create
 Create a directory
 
+
+## Todo:
+can link file without configuration, for example:
+```bash
+$ xdm tmux # tmux is a directory or file
+```
+Then xdm will auto create the link
+
+
 ## License
 [GNU General Public License v3.0](./LICENSE)
