@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use colored::Colorize;
 use serde_yaml::Value;
 use std::{fs, path::Path};
@@ -6,9 +6,32 @@ use std::{fs, path::Path};
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
-    /// File path to YAMl file
-    #[clap(default_value_t = String::from("xdm.yaml") ,value_parser)]
-    file: String,
+    /// link for specific dir/file
+    #[clap(subcommand)]
+    command: Commands,
+
+    /// create all link including `manual`
+    #[clap(short, long, value_parser)]
+    all: bool,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// link the specific dir\file
+    Link {
+        #[clap(value_parser)]
+        path: String,
+    },
+    /// start xdm
+    Start {
+        #[clap(default_value_t = String::from("xdm.yaml"), value_parser)]
+        name: String,
+    },
+    /// alias for `start`
+    S {
+        #[clap(default_value_t = String::from("xdm.yaml"), value_parser)]
+        name: String,
+    },
 }
 
 trait Configuration {
@@ -18,6 +41,7 @@ trait Configuration {
 impl Configuration for Value {
     fn get_link_parameter(&self, original: &str, parameter: &str) -> &str {
         let all_links = self.get("link").unwrap();
+        // BUG: cann't get `a` whether has `./a`  
         let all_parameters = all_links.get(original).unwrap();
         if all_parameters.is_string() && parameter == "path" {
             all_parameters.as_str().unwrap()
@@ -36,7 +60,7 @@ impl Configuration for Value {
             } else {
                 match parameter {
                     "exist" | "if" | "create" => "true",
-                    "force" => "false",
+                    "force" | "manual" => "false",
                     _ => "",
                 }
             }
@@ -47,8 +71,16 @@ impl Configuration for Value {
 fn get_conf() -> Value {
     // get file path from user
     let args = Args::parse();
-    let file_path = &args.file;
-    if Path::new(file_path).exists() {
+    let command = args.command;
+    let file_path = if let Commands::S { name } = command {
+        name
+    } else if let Commands::Start { name } = command {
+        name
+    } else {
+        String::from("xdm.yaml")
+    };
+
+    if Path::new(&file_path).exists() {
         let file_content = std::fs::File::open(file_path).expect("Could not open file.");
         serde_yaml::from_reader(file_content).expect("Could not read values.")
     } else {
@@ -64,9 +96,33 @@ fn main() {
         return;
     }
 
+    // create the specific link
+    let args = Args::parse();
+    let command = args.command;
+
+    if let Commands::Link { path } = command {
+        let input = absolute_path(&path);
+        let all_link_items = xdm_config.get("link").unwrap().as_mapping().unwrap();
+        let all_links: Vec<&Value> = all_link_items.keys().collect();
+        for original in all_links {
+            let original = original.as_str().unwrap();
+            let absolute_original = absolute_path(original);
+            if input == absolute_original {
+                // should get the value from relative path
+                let link = xdm_config.get_link_parameter(&path, "path");
+                if let Err(err) = create_softlink(&original, &link) {
+                    println!("{}", format!("{}: {}", original, err).blue())
+                } else {
+                    println!("{} {} {}", original.green(), "=>".green(), link.green());
+                }
+                return;
+            }
+        }
+        return;
+    }
+
     // do jobs for create
     let all_creates = xdm_config.get("create");
-
     if let Some(..) = all_creates {
         println!("######create######");
         let all_creates = all_creates.unwrap().as_sequence().unwrap();
@@ -100,16 +156,25 @@ fn main() {
                 ": something wrong in `path`".red()
             )
         } else {
-            match create_softlink(original, link) {
-                Ok(_) => {
+            let manual: bool = xdm_config
+                .get_link_parameter(original, "manual")
+                .parse()
+                .unwrap();
+            let all = Args::parse().all;
+            if !manual || all {
+                if let Err(err) = create_softlink(original, link) {
+                    println!("{}", format!("{}: {}", original, err).blue())
+                } else {
                     println!("{} {} {}", original.green(), "=>".green(), link.green());
                 }
-                Err(err) => println!("{}", format!("{}: {}", original, err).blue()),
             }
         }
     }
 }
 
+/// Check a command is true or false
+///
+/// * `command`: parameter `if`
 fn get_command_status(command: &str) -> bool {
     use std::process::Command;
 
@@ -154,6 +219,10 @@ fn absolute_path(path: &str) -> String {
     }
 }
 
+/// auto create soft link with relative paths
+///
+/// * `original`: original path
+/// * `link`: linked path
 fn create_softlink(original: &str, link: &str) -> Result<(), String> {
     use std::os::unix::fs::symlink;
 
@@ -183,20 +252,14 @@ fn create_softlink(original: &str, link: &str) -> Result<(), String> {
         if !command_status {
             Err(String::from("skip to create link"))
         } else if !exist && force {
-            // remove_file_dir(link_path).unwrap();
-            // symlink(absolute_original, absolute_link).unwrap();
             Ok(String::from("rc"))
         } else if !exist && !link_path.exists() {
-            // symlink(absolute_original, absolute_link).unwrap();
             Ok(String::from("c"))
         } else if original_path.exists() && force {
-            // remove_file_dir(link_path).unwrap();
-            // symlink(absolute_original, absolute_link).unwrap();
             Ok(String::from("rc"))
         } else if !original_path.exists() {
             Err(format!("the file `{}` doesn't exist", original))
         } else {
-            // symlink(absolute_original, absolute_link).err();
             Ok(String::from("c"))
         }
     }

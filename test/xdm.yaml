@@ -1,8 +1,9 @@
 link:
-  ./1a:
-    path: ./1/a
+  ./1:
+    path: ./2
+    manual: true
 
-  ./xa: ./s
+  xa: ./s
 
   ./ca:
     path: a
