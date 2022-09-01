@@ -51,7 +51,9 @@ impl Configuration for Value {
             if _original != original {
                 all_links.get(_original).unwrap()
             } else {
-                all_links.get(format!("./{}", original)).expect(&format!("Can't find `{}` in configuration", original))
+                all_links
+                    .get(format!("./{}", original))
+                    .unwrap_or_else(|| panic!("Can't find `{}` in configuration", original))
             }
         });
         if all_parameters.is_string() && parameter == "path" {
