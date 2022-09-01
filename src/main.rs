@@ -47,14 +47,9 @@ impl Configuration for Value {
     fn get_link_parameter(&self, original: &str, parameter: &str) -> &str {
         let all_links = self.get("link").unwrap();
         let all_parameters = all_links.get(original).unwrap_or_else(|| -> &Value {
-            // ./a to a
-            let _original = if original.len() > 1 && &original[..2] == "./" {
-                &original[2..]
-            } else {
-                original
-            };
-            if _original != original {
-                all_links.get(_original).unwrap()
+            if original.len() > 1 && &original[..2] == "./" {
+                // ./a to a
+                all_links.get(&original[2..]).unwrap()
             } else {
                 all_links
                     .get(format!("./{}", original))
@@ -63,24 +58,21 @@ impl Configuration for Value {
         });
         if all_parameters.is_string() && parameter == "path" {
             all_parameters.as_str().unwrap()
-        } else {
-            let _value = all_parameters.get(&parameter);
-            if let Some(v) = _value {
-                if v.is_bool() {
-                    match v {
-                        Value::Bool(true) => "true",
-                        Value::Bool(false) => "false",
-                        _ => "",
-                    }
-                } else {
-                    v.as_str().unwrap_or("")
-                }
-            } else {
-                match parameter {
-                    "exist" | "if" | "create" => "true",
-                    "force" | "manual" => "false",
+        } else if let Some(value) = all_parameters.get(&parameter) {
+            if value.is_bool() {
+                match value {
+                    Value::Bool(true) => "true",
+                    Value::Bool(false) => "false",
                     _ => "",
                 }
+            } else {
+                value.as_str().unwrap_or("")
+            }
+        } else {
+            match parameter {
+                "exist" | "if" | "create" => "true",
+                "force" | "manual" => "false",
+                _ => "",
             }
         }
     }
@@ -90,20 +82,17 @@ fn get_conf() -> Value {
     // get file path from user
     let args = Args::parse();
     let command = args.command;
-    let file_path = if let Commands::S { name } = command {
-        name
-    } else if let Commands::Start { name } = command {
-        name
-    } else {
-        String::from("xdm.yaml")
+    let file_path = match command {
+        Commands::S { name } => name,
+        Commands::Start { name } => name,
+        _ => String::from("xdm.yaml"),
     };
 
     if Path::new(&file_path).exists() {
         let file_content = std::fs::File::open(file_path).expect("Could not open file.");
         serde_yaml::from_reader(file_content).expect("Could not read values.")
     } else {
-        let yaml = "Can't find configuration file";
-        serde_yaml::from_str(yaml).unwrap()
+        serde_yaml::from_str("Can't find configuration file").unwrap()
     }
 }
 
@@ -117,13 +106,10 @@ fn main() {
     // create the specific link
     let args = Args::parse();
     let command = args.command;
-
-    let path = if let Commands::L { path } = command {
-        path
-    } else if let Commands::Link { path } = command {
-        path
-    } else {
-        String::new()
+    let path = match command {
+        Commands::L { path } => path,
+        Commands::Link { path } => path,
+        _ => String::new(),
     };
     if !path.is_empty() {
         let original = &path;
@@ -177,8 +163,7 @@ fn main() {
                 .get_link_parameter(original, "manual")
                 .parse()
                 .unwrap();
-            let all = Args::parse().all;
-            if !manual || all {
+            if !manual || args.all {
                 if let Err(err) = create_softlink(original, link) {
                     println!("{}", format!("{}: {}", original, err).blue())
                 } else {
@@ -189,7 +174,7 @@ fn main() {
     }
 }
 
-/// Check a command is true or false
+/// Check a command is true or false WIP
 ///
 /// * `command`: parameter `if`
 fn get_command_status(command: &str) -> bool {
@@ -206,10 +191,10 @@ fn get_command_status(command: &str) -> bool {
 }
 
 fn remove_file_dir(path: &Path) {
-    if Path::exists(path) {
-        if Path::is_dir(path) {
+    if path.exists() {
+        if path.is_dir() {
             fs::remove_dir_all(path).unwrap();
-        } else if Path::is_file(path) {
+        } else if path.is_file() {
             fs::remove_file(path).unwrap();
         }
     }
@@ -281,34 +266,30 @@ fn create_softlink(original: &str, link: &str) -> Result<(), String> {
         }
     }
 
-    let can_create = can_create(original, link);
+    let can_create = can_create(original, link)?;
 
-    if can_create.is_ok() {
-        let absolute_original = &absolute_path(original);
-        let absolute_link = &absolute_path(link);
-        let link_path = Path::new(absolute_link);
-        let link_parent = link_path.parent().unwrap();
+    let absolute_original = &absolute_path(original);
+    let absolute_link = &absolute_path(link);
+    let link_path = Path::new(absolute_link);
+    let link_parent = link_path.parent().unwrap();
 
-        let create: bool = get_conf()
-            .get_link_parameter(original, "create")
-            .parse()
-            .unwrap();
+    let create: bool = get_conf()
+        .get_link_parameter(original, "create")
+        .parse()
+        .unwrap();
 
-        if create && !link_parent.exists() {
-            fs::create_dir_all(link_parent.to_str().unwrap()).unwrap();
-        }
-        match can_create.ok().unwrap().as_str() {
-            "c" => {
-                symlink(absolute_original, absolute_link).err();
-            }
-            "rc" => {
-                remove_file_dir(link_path);
-                symlink(absolute_original, absolute_link).unwrap();
-            }
-            _ => todo!(),
-        }
-        Ok(())
-    } else {
-        Err(can_create.err().unwrap())
+    if create && !link_parent.exists() {
+        fs::create_dir_all(link_parent.to_str().unwrap()).unwrap();
     }
+    match can_create.as_str() {
+        "c" => {
+            symlink(absolute_original, absolute_link).err();
+        }
+        "rc" => {
+            remove_file_dir(link_path);
+            symlink(absolute_original, absolute_link).unwrap();
+        }
+        _ => todo!(),
+    }
+    Ok(())
 }
