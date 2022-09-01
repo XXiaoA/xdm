@@ -41,8 +41,19 @@ trait Configuration {
 impl Configuration for Value {
     fn get_link_parameter(&self, original: &str, parameter: &str) -> &str {
         let all_links = self.get("link").unwrap();
-        // BUG: cann't get `a` whether has `./a`  
-        let all_parameters = all_links.get(original).unwrap();
+        let all_parameters = all_links.get(original).unwrap_or_else(|| -> &Value {
+            // ./a to a
+            let _original = if original.len() > 1 && &original[..2] == "./" {
+                &original[2..]
+            } else {
+                original
+            };
+            if _original != original {
+                all_links.get(_original).unwrap()
+            } else {
+                all_links.get(format!("./{}", original)).expect(&format!("Can't find `{}` in configuration", original))
+            }
+        });
         if all_parameters.is_string() && parameter == "path" {
             all_parameters.as_str().unwrap()
         } else {
@@ -101,21 +112,13 @@ fn main() {
     let command = args.command;
 
     if let Commands::Link { path } = command {
-        let input = absolute_path(&path);
-        let all_link_items = xdm_config.get("link").unwrap().as_mapping().unwrap();
-        let all_links: Vec<&Value> = all_link_items.keys().collect();
-        for original in all_links {
-            let original = original.as_str().unwrap();
-            let absolute_original = absolute_path(original);
-            if input == absolute_original {
-                // should get the value from relative path
-                let link = xdm_config.get_link_parameter(&path, "path");
-                if let Err(err) = create_softlink(&original, &link) {
-                    println!("{}", format!("{}: {}", original, err).blue())
-                } else {
-                    println!("{} {} {}", original.green(), "=>".green(), link.green());
-                }
-                return;
+        let original = &path;
+        let link = xdm_config.get_link_parameter(&path, "path");
+        if !link.is_empty() {
+            if let Err(err) = create_softlink(original, link) {
+                println!("{}", format!("{}: {}", original, err).blue())
+            } else {
+                println!("{} {} {}", original.green(), "=>".green(), link.green());
             }
         }
         return;

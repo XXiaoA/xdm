@@ -1,6 +1,6 @@
 link:
-  ./1:
-    path: ./2
+  b:
+    path: ./c
     manual: true
 
   xa: ./s
