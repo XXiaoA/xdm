@@ -1,5 +1,7 @@
 # xdm
 XXiaoA's dotfiles manager
+![Screenshot](./Screenshot.jpg)
+
 
 ## Install
 ### Releases
