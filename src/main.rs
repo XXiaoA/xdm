@@ -22,6 +22,11 @@ enum Commands {
         #[clap(value_parser)]
         path: String,
     },
+    /// alias for `link`
+    L {
+        #[clap(value_parser)]
+        path: String,
+    },
     /// start xdm
     Start {
         #[clap(default_value_t = String::from("xdm.yaml"), value_parser)]
@@ -113,7 +118,14 @@ fn main() {
     let args = Args::parse();
     let command = args.command;
 
-    if let Commands::Link { path } = command {
+    let path = if let Commands::L { path } = command {
+        path
+    } else if let Commands::Link { path } = command {
+        path
+    } else {
+        String::new()
+    };
+    if !path.is_empty() {
         let original = &path;
         let link = xdm_config.get_link_parameter(&path, "path");
         if !link.is_empty() {
