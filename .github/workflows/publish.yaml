@@ -2,7 +2,8 @@ on:
   push:
     # Pattern matched against refs/tags
     tags:
-      - v[0-9]+.*
+      - '*'           # Push events to every tag not containing /
+
   workflow_dispatch:
 
 name: Publish

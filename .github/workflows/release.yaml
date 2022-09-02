@@ -2,7 +2,7 @@ name: Release
 on:
   push:
     tags:
-      - v[0-9]+.*
+      - '*'           # Push events to every tag not containing /
 
 jobs:
   create-release:
@@ -23,7 +23,7 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
-          # - windows-latest  
+          # - windows-latest
 
     runs-on:  ${{ matrix.os }}
 
