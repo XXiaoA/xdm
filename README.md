@@ -85,7 +85,7 @@ Create a directory
 ### Notice
 Whether `path-to-linked-file` is a directory or file, it shouldn't end with `/`.
 
-But `path-to-original-file` should end with `\` or not is base on your hobby.
+But `path-to-original-file` should end with `/` or not is base on yourself.
 
 ### Full example
 [XXiaoA/dotfiles](https://github.com/XXiaoA/dotfiles)
