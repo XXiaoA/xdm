@@ -25,7 +25,7 @@ Also, you can link a specific a directory or file. Check [here](#manual)
 
 
 ### Manual
-You can set `manual` true in your link parameter (see [configuration](#configuration)). 
+You can set `manual` true in your link parameter (see [configuration](#configuration)).
 
 If a link is manual, it won't be crated after run `xdm s`. But you can create it manually:
 ```shell
@@ -59,7 +59,7 @@ Notice: you must have `link` option.
 ###  Link
 Link a file/directory.
 
-What's more, the two following form is same, it can reduce your work: 
+What's more, the two following form is same, it can reduce your work:
 ```yaml
 link:
   ./a:
@@ -75,7 +75,8 @@ link:
 | force     | Create the link whether the linked file exists or not | bool   | false   |
 | if        | Create the link if shell command is true (WIP)        | string | \\      |
 | create    | Create the parent directory of link if need           | bool   | true    |
-| manual    | Check [here](#manual)                               | bool   | false   |
+| manual    | Check [here](#manual)                                 | bool   | false   |
+| relink    | Auto relink if the linked path is a link              | bool   | true    |
 
 ### Create
 Create a directory

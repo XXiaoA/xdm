@@ -70,7 +70,7 @@ impl Configuration for Value {
             }
         } else {
             match parameter {
-                "exist" | "if" | "create" => "true",
+                "exist" | "if" | "create" | "relink" => "true",
                 "force" | "manual" => "false",
                 _ => "",
             }
@@ -244,6 +244,10 @@ fn create_softlink(original: &str, link: &str) -> Result<(), String> {
             .get_link_parameter(original, "force")
             .parse()
             .unwrap();
+        let relink: bool = xdm_config
+            .get_link_parameter(original, "relink")
+            .parse()
+            .unwrap();
         let condition = xdm_config.get_link_parameter(original, "if");
         let command_status = if condition == "true" {
             true
@@ -261,6 +265,8 @@ fn create_softlink(original: &str, link: &str) -> Result<(), String> {
             Ok(String::from("rc"))
         } else if !original_path.exists() {
             Err(format!("the file `{}` doesn't exist", original))
+        } else if relink && link_path.is_symlink() {
+            Ok(String::from("rc"))
         } else if !force && link_path.exists() {
             Err(format!(
                 "`{}` has existed, you may need `force` parameter",
