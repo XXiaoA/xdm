@@ -261,6 +261,11 @@ fn create_softlink(original: &str, link: &str) -> Result<(), String> {
             Ok(String::from("rc"))
         } else if !original_path.exists() {
             Err(format!("the file `{}` doesn't exist", original))
+        } else if !force && link_path.exists() {
+            Err(format!(
+                "`{}` has existed, you may need `force` parameter",
+                link
+            ))
         } else {
             Ok(String::from("c"))
         }
