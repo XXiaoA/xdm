@@ -149,8 +149,7 @@ fn main() {
         return;
     }
     println!("#######link#######");
-    let all_link_items = all_link_items.unwrap().as_mapping().unwrap();
-    for link_item in all_link_items {
+    for link_item in all_link_items.unwrap().as_mapping().unwrap() {
         let original = link_item.0.as_str().unwrap();
         let link = xdm_config.get_link_parameter(original, "path");
 
