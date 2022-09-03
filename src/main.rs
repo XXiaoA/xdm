@@ -1,3 +1,4 @@
+use anyhow::Result as aResult;
 use clap::{Parser, Subcommand};
 use colored::Colorize;
 use serde_yaml::Value;
@@ -78,30 +79,26 @@ impl Configuration for Value {
     }
 }
 
-fn get_conf() -> Value {
+fn get_conf() -> aResult<Value> {
     // get file path from user
-    let args = Args::parse();
-    let command = args.command;
+    let command = Args::parse().command;
     let file_path = match command {
         Commands::S { name } => name,
         Commands::Start { name } => name,
         _ => String::from("xdm.yaml"),
     };
 
-    if Path::new(&file_path).exists() {
-        let file_content = std::fs::File::open(file_path).expect("Could not open file.");
-        serde_yaml::from_reader(file_content).expect("Could not read values.")
-    } else {
-        serde_yaml::from_str("Can't find configuration file").unwrap()
-    }
+    let file_content = std::fs::File::open(file_path)?;
+    Ok(serde_yaml::from_reader(file_content)?)
 }
 
 fn main() {
     let xdm_config = get_conf();
-    if xdm_config == "Can't find configuration file" {
-        println!("{}", "Can't find configuration file".bold().red());
+    if let Err(err) = xdm_config {
+        eprintln!("{err}");
         return;
     }
+    let xdm_config = xdm_config.unwrap();
 
     // create the specific link
     let args = Args::parse();
@@ -190,14 +187,13 @@ fn get_command_status(command: &str) -> bool {
     status.success()
 }
 
-fn remove_file_dir(path: &Path) {
-    if path.exists() {
-        if path.is_dir() {
-            fs::remove_dir_all(path).unwrap();
-        } else if path.is_file() {
-            fs::remove_file(path).unwrap();
-        }
+fn remove_file_dir(path: &Path) -> aResult<()> {
+    if path.is_dir() {
+        fs::remove_dir_all(path)?;
+    } else if path.is_file() {
+        fs::remove_file(path)?;
     }
+    Ok(())
 }
 
 fn absolute_path(path: &str) -> String {
@@ -235,7 +231,7 @@ fn create_softlink(original: &str, link: &str) -> Result<(), String> {
         let original_path = Path::new(absolute_original);
         let link_path = Path::new(absolute_link);
 
-        let xdm_config = get_conf();
+        let xdm_config = get_conf().unwrap();
         let exist: bool = xdm_config
             .get_link_parameter(original, "exist")
             .parse()
@@ -285,6 +281,7 @@ fn create_softlink(original: &str, link: &str) -> Result<(), String> {
     let link_parent = link_path.parent().unwrap();
 
     let create: bool = get_conf()
+        .unwrap()
         .get_link_parameter(original, "create")
         .parse()
         .unwrap();
@@ -294,10 +291,12 @@ fn create_softlink(original: &str, link: &str) -> Result<(), String> {
     }
     match can_create.as_str() {
         "c" => {
-            symlink(absolute_original, absolute_link).err();
+            symlink(absolute_original, absolute_link).unwrap();
         }
         "rc" => {
-            remove_file_dir(link_path);
+            if let Err(err) = remove_file_dir(link_path) {
+                eprintln!("{err}");
+            }
             symlink(absolute_original, absolute_link).unwrap();
         }
         _ => todo!(),
