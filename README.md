@@ -2,6 +2,8 @@
 XXiaoA's dotfiles manager
 ![Screenshot](./Screenshot.jpg)
 
+**[🇨🇳中文](./README_zh.md)**
+
 
 ## Install
 ### Releases
