@@ -1,4 +1,4 @@
-use anyhow::{Result as aResult, Context};
+use anyhow::{Context, Result as aResult};
 use clap::{Parser, Subcommand};
 use colored::Colorize;
 use serde_yaml::Value;
@@ -89,7 +89,7 @@ fn get_conf() -> aResult<Value> {
     };
 
     let file_content = std::fs::File::open(file_path).context("Failed to read configuration")?;
-    Ok(serde_yaml::from_reader(file_content).context("Failed to read configuration")?)
+    serde_yaml::from_reader(file_content).context("Failed to read configuration")
 }
 
 fn main() {
