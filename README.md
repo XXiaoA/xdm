@@ -38,6 +38,24 @@ Also, `link` command can work in all links, whether it'is manual or not.
 
 And you can crate all links with `xdm -a s`
 
+### Add
+You can use `add` command to add a link item into your configuration automatically. For example:
+```shell
+xdm a a
+```
+
+Then the following will add into your configuration:
+```yaml
+link:
+  # add by xdm
+  a:
+    path: b
+```
+
+BTW, the link is added is absolutize. And it don't use a simple way: `a: b` in order to let you add other parameter more easily.
+
+**Notice**: This feature will change your configuration. Your configuration probably be messy, but it still legal. Maybe fix it in the futrue.
+
 
 ## Configuration
 For example:

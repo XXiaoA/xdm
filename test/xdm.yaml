@@ -1,14 +1,5 @@
 link:
-  b:
-    path: ./c
-    manual: true
-
   xa: ./s
-
   ./ca:
     path: a
     force: true
-
-# create:
-#   - ./create
-#   - cas

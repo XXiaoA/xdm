@@ -1,8 +1,8 @@
 use anyhow::{Context, Result as aResult};
 use clap::{Parser, Subcommand};
 use colored::Colorize;
-use serde_yaml::Value;
-use std::{fs, path::Path};
+use serde_yaml::{Mapping, Value};
+use std::{fs, io::ErrorKind, path::Path};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -37,6 +37,16 @@ enum Commands {
     S {
         #[clap(default_value_t = String::from("xdm.yaml"), value_parser)]
         name: String,
+    },
+    /// add link
+    Add {
+        #[clap(value_parser)]
+        path: String,
+    },
+    /// alias for `Add`
+    A {
+        #[clap(value_parser)]
+        path: String,
     },
 }
 
@@ -100,10 +110,50 @@ fn main() {
     }
     let xdm_config = xdm_config.unwrap();
 
-    // create the specific link
     let args = Args::parse();
-    let command = args.command;
-    let path = match command {
+
+    let add = match &args.command {
+        Commands::A { path } => path.as_str(),
+        Commands::Add { path } => path.as_str(),
+        _ => "",
+    };
+    if !add.is_empty() {
+        let link_path = fs::read_link(add);
+        if link_path.is_err() {
+            let err_kind = link_path.err().unwrap().kind();
+            match err_kind {
+                ErrorKind::NotFound => eprintln!("File or directory not exist"),
+                ErrorKind::InvalidInput => eprintln!("This not a link"),
+                _ => eprintln!("Something wrong"),
+            }
+            return;
+        }
+        let mut conf = xdm_config.to_owned();
+        let modified_conf = conf.get_mut("link").unwrap().as_mapping_mut().unwrap();
+        modified_conf.insert(Value::String(absolute_path(add)), {
+            let mut new_mapping = Mapping::new();
+            let link_path = absolute_path(link_path.as_ref().unwrap().to_str().unwrap());
+            new_mapping.insert(Value::String("path".to_owned()), Value::String(link_path));
+            serde_yaml::Value::Mapping(new_mapping)
+        });
+        let config_path = match args.command {
+            Commands::S { name } => name,
+            Commands::Start { name } => name,
+            _ => String::from("xdm.yaml"),
+        };
+        let file = fs::File::create(config_path).unwrap();
+        serde_yaml::to_writer(file, &conf).unwrap();
+        let hint = format!(
+            "add {:?} into configuration successfully",
+            link_path.unwrap()
+        )
+        .green();
+        println!("{hint}");
+        return;
+    }
+
+    // create the specific link
+    let path = match args.command {
         Commands::L { path } => path,
         Commands::Link { path } => path,
         _ => String::new(),
@@ -204,13 +254,16 @@ fn absolute_path(path: &str) -> String {
     use path_absolutize::Absolutize;
     use std::env;
 
+    if &path[..1] == "/" {
+        return path.to_string();
+    }
     let path_vec: Vec<&str> = path.split('/').collect();
 
     if path_vec[0] == "~" {
         let prev = env::var("HOME").unwrap_or_else(|_| "none".to_string());
         let end = path_vec[1..].join("/");
         format!("{}/{}", prev, end)
-    } else if &path_vec[0][0..1] == "$" {
+    } else if &path_vec[0][..1] == "$" {
         let env = &path_vec[0][1..];
         let prev = env::var(env).unwrap_or_else(|_| "none".to_string());
         let end = path_vec[1..].join("/");
