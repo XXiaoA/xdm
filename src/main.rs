@@ -157,13 +157,12 @@ fn main() {
         ""
     };
     if !path.is_empty() {
-        let original = &path;
-        let link = xdm_config.get_link_parameter(&path, "path");
+        let link = xdm_config.get_link_parameter(path, "path");
         if !link.is_empty() {
-            if let Err(err) = create_softlink(original, link) {
-                println!("{}", format!("{}: {}", original, err).blue())
+            if let Err(err) = create_softlink(path, link) {
+                println!("{}", format!("{}: {}", path, err).blue())
             } else {
-                println!("{} {} {}", original.green(), "=>".green(), link.green());
+                println!("{} {} {}", path.green(), "=>".green(), link.green());
             }
         }
         return;
