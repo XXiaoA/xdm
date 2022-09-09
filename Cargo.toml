@@ -18,4 +18,8 @@ serde = { version = "1.0.144", features = ["derive"] }
 serde_yaml = "0.9.10"
 
 [profile.release]
-panic = 'abort' 
+panic = 'abort'
+strip = true  # Automatically strip symbols from the binary.
+opt-level = "z"  # Optimize for size.
+lto = true
+codegen-units = 1
