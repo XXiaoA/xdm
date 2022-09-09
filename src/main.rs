@@ -1,53 +1,51 @@
 use anyhow::{Context, Result as aResult};
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 use colored::Colorize;
 use serde_yaml::{Mapping, Value};
 use std::{fs, io::ErrorKind, path::Path};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
-struct Args {
-    /// link for specific dir/file
+struct Cli {
     #[clap(subcommand)]
     command: Commands,
+}
 
+#[derive(Subcommand)]
+enum Commands {
+    /// start xdm
+    Start(Start),
+    /// alias for `start`
+    S(Start),
+    /// link the specific dir\file
+    Link(Link),
+    /// alias for `link`
+    L(Link),
+    /// add link
+    Add(Add),
+    /// alias for `Add`
+    A(Add),
+}
+
+#[derive(Args)]
+struct Start {
+    #[clap(default_value_t = String::from("xdm.yaml"), value_parser)]
+    path: String,
     /// create all link including `manual`
     #[clap(short, long, value_parser)]
     all: bool,
 }
 
-#[derive(Subcommand)]
-enum Commands {
-    /// link the specific dir\file
-    Link {
-        #[clap(value_parser)]
-        path: String,
-    },
-    /// alias for `link`
-    L {
-        #[clap(value_parser)]
-        path: String,
-    },
-    /// start xdm
-    Start {
-        #[clap(default_value_t = String::from("xdm.yaml"), value_parser)]
-        name: String,
-    },
-    /// alias for `start`
-    S {
-        #[clap(default_value_t = String::from("xdm.yaml"), value_parser)]
-        name: String,
-    },
-    /// add link
-    Add {
-        #[clap(value_parser)]
-        path: String,
-    },
-    /// alias for `Add`
-    A {
-        #[clap(value_parser)]
-        path: String,
-    },
+#[derive(Args)]
+struct Link {
+    #[clap(value_parser)]
+    path: String,
+}
+
+#[derive(Args)]
+struct Add {
+    #[clap(value_parser)]
+    path: String,
 }
 
 trait Configuration {
@@ -91,11 +89,11 @@ impl Configuration for Value {
 
 fn get_conf() -> aResult<Value> {
     // get file path from user
-    let command = Args::parse().command;
-    let file_path = match command {
-        Commands::S { name } => name,
-        Commands::Start { name } => name,
-        _ => String::from("xdm.yaml"),
+    let command = Cli::parse().command;
+    let file_path = if let Commands::S(args) | Commands::Start(args) = &command {
+        &args.path
+    } else {
+        "xdm.yaml"
     };
 
     let file_content = std::fs::File::open(file_path).context("Failed to read configuration")?;
@@ -110,12 +108,12 @@ fn main() {
     }
     let xdm_config = xdm_config.unwrap();
 
-    let args = Args::parse();
+    let cli = Cli::parse();
 
-    let add = match &args.command {
-        Commands::A { path } => path.as_str(),
-        Commands::Add { path } => path.as_str(),
-        _ => "",
+    let add = if let Commands::A(args) | Commands::Add(args) = &cli.command {
+        args.path.as_str()
+    } else {
+        ""
     };
     if !add.is_empty() {
         let link_path = fs::read_link(add);
@@ -128,7 +126,7 @@ fn main() {
             }
             return;
         }
-        let mut conf = xdm_config.to_owned();
+        let mut conf = xdm_config;
         let modified_conf = conf.get_mut("link").unwrap().as_mapping_mut().unwrap();
         modified_conf.insert(Value::String(absolute_path(add)), {
             let mut new_mapping = Mapping::new();
@@ -136,10 +134,10 @@ fn main() {
             new_mapping.insert(Value::String("path".to_owned()), Value::String(link_path));
             serde_yaml::Value::Mapping(new_mapping)
         });
-        let config_path = match args.command {
-            Commands::S { name } => name,
-            Commands::Start { name } => name,
-            _ => String::from("xdm.yaml"),
+        let config_path = if let Commands::S(args) | Commands::Start(args) = &cli.command {
+            &args.path
+        } else {
+            "xdm.yaml"
         };
         let file = fs::File::create(config_path).unwrap();
         serde_yaml::to_writer(file, &conf).unwrap();
@@ -153,10 +151,10 @@ fn main() {
     }
 
     // create the specific link
-    let path = match args.command {
-        Commands::L { path } => path,
-        Commands::Link { path } => path,
-        _ => String::new(),
+    let path = if let Commands::L(args) | Commands::Link(args) = &cli.command {
+        &args.path
+    } else {
+        ""
     };
     if !path.is_empty() {
         let original = &path;
@@ -214,7 +212,12 @@ fn main() {
                 .get_link_parameter(original, "manual")
                 .parse()
                 .unwrap();
-            if !manual || args.all {
+            let all = if let Commands::Start(args) | Commands::S(args) = &cli.command {
+                args.all
+            } else {
+                false
+            };
+            if !manual || all {
                 if let Err(err) = create_softlink(original, link) {
                     println!("{}", format!("{}: {}", original, err).blue())
                 } else {

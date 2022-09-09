@@ -23,7 +23,7 @@ First you should create a **yaml** file named `xdm.yaml` (not prerequisite, but 
 
 Then you can run `xdm s` in a directory which has the yaml file. Xdm will find the `xdm.yaml` automatically in the current directory. Or you're able to use `xdm s file.yaml` to specify a yaml file.
 
-Also, you can link a specific a directory or file. Check [here](#manual)
+Also, you can link a specific a directory or file.
 
 
 ### Manual
@@ -36,7 +36,7 @@ xdm link {path}
 
 Also, `link` command can work in all links, whether it'is manual or not.
 
-And you can crate all links with `xdm -a s`
+And you can crate all links with `xdm s -a`
 
 ### Add
 You can use `add` command to add a link item into your configuration automatically. For example:

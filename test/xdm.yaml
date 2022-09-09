@@ -2,4 +2,3 @@ link:
   xa: ./s
   ./ca:
     path: a
-    force: true

@@ -21,7 +21,7 @@ XXiaoA's dotfiles manager
 
 然后，您可以在包含 yaml 文件的目录中运行 `xdm s`。 Xdm 会自动在当前目录中找到`xdm.yaml`。或者你可以使用`xdm s file.yaml`来指定一个yaml文件。
 
-此外，您可以链接特定的目录或文件。查看[这里](#manual)
+此外，您可以链接特定的目录或文件。
 
 
 ### Manual
@@ -34,7 +34,7 @@ xdm link {路径}
 
 此外，无论一个链接是否是 manual，`link` 子命令都可以在所有链接中工作。
 
-你可以用`xdm -a s`创建所有链接
+你可以用`xdm s -a`创建所有链接
 
 ### Add
 你可以使用 `add` 命令去自动添加一对链接进你的配置里。例如：
