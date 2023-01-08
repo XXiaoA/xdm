@@ -15,6 +15,12 @@ Download from [crates.io](https://crates.io/crates/xdm): `cargo install xdm`. An
 ### From source
 Clone the source code with git. Then run `cargo install --path .`. And remember to add `~/.cargo/bin/` into your $PATH
 
+### AUR
+https://aur.archlinux.org/packages/xdm
+```sh
+paru -S xdm
+```
+
 
 ## Usage
 > Run `xdm -h` for more details
@@ -114,7 +120,7 @@ But `path-to-original-file` should end with `/` or not is base on yourself.
 [XXiaoA/dotfiles](https://github.com/XXiaoA/dotfiles)
 
 ### TODO
-- [ ] add support for AUR
+- [x] add support for AUR
 
 ## License
 [GNU General Public License v3.0](./LICENSE)

@@ -13,6 +13,12 @@ XXiaoA's dotfiles manager
 ### 源码
 使用 git 克隆源代码。然后运行`cargo install --path .`。记得在你的 $PATH 中添加 `~/.cargo/bin/`
 
+### AUR
+https://aur.archlinux.org/packages/xdm
+```sh
+paru -S xdm
+```
+
 
 ## 用法
 > 运行 `xdm -h` 了解更多
